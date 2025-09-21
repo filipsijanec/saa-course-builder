@@ -1,13 +1,44 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+.tag {
+  display: inline-block;
+  background-color: #ccc;  /* light gray */
+  color: #333;
+  padding: 2px 6px;
+  margin-left: 6px;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.topic-row {
+  display: flex;
+  justify-content: space-between; /* moves tags to the right */
+  align-items: center;
+}
+
+button {
+  padding: 4px 8px;
+  margin-left: 6px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Pink buttons (Add / Remove) */
+button.add-remove {
+  background-color: #f4147f;
+  color: #fff;
+}
+
+button.add-remove:hover {
+  background-color: #c20f65;
+}
+
+/* Info buttons light gray */
+button.info {
+  background-color: #ccc;
+  color: #333;
+}
+
+button.info:hover {
+  background-color: #bbb;
 }
