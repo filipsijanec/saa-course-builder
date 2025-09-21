@@ -1,15 +1,44 @@
-body { font-family: sans-serif; margin:0; padding:0; }
-.container { padding: 20px; max-width:900px; margin:auto; }
-.topics-list, .selected-topics, .pathways, .filters, .session-pack { margin-bottom: 20px; }
-.topic { display:flex; justify-content:space-between; align-items:center; padding:6px; border:1px solid #ddd; margin-bottom:6px; border-radius:6px; cursor:pointer; }
-.topic:hover { background-color:#f9f9f9; }
-.info { background-color:#f4147f; color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; }
-.tag { background-color:#eee; padding:2px 6px; border-radius:4px; font-size:12px; }
-.filters select, .filters input { margin-right:10px; padding:4px; }
-.modal-overlay {
-  position:absolute; top:0; left:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5);
-  display:flex; justify-content:center; align-items:center; z-index:1000;
+.tag {
+  display: inline-block;
+  background-color: #ccc;  /* light gray */
+  color: #333;
+  padding: 2px 6px;
+  margin-left: 6px;
+  border-radius: 4px;
+  font-size: 12px;
 }
-.modal-content {
-  background-color:#fff; padding:20px; border-radius:10px; max-width:500px; width:90%; box-shadow:0 4px 10px rgba(0,0,0,0.3);
+
+.topic-row {
+  display: flex;
+  justify-content: space-between; /* moves tags to the right */
+  align-items: center;
+}
+
+button {
+  padding: 4px 8px;
+  margin-left: 6px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Pink buttons (Add / Remove) */
+button.add-remove {
+  background-color: #f4147f;
+  color: #fff;
+}
+
+button.add-remove:hover {
+  background-color: #c20f65;
+}
+
+/* Info buttons light gray */
+button.info {
+  background-color: #ccc;
+  color: #333;
+}
+
+button.info:hover {
+  background-color: #bbb;
 }
