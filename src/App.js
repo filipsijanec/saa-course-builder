@@ -1,171 +1,191 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 
-const topics = [
-  { id: 1, name: 'Film Scoring Basics', type: 'Lesson', duration: 30, sessions: 1, 
-    description: 'Learn the fundamentals of scoring for film, including themes, motifs, and spotting scenes.', 
-    tags: ['Film', 'Basics'] },
-  { id: 2, name: 'Adaptive Game Music', type: 'Mini-Course', duration: 60, sessions: 1, 
-    description: 'Understand how to create music that adapts dynamically to gameplay using FMOD/Wwise.', 
-    tags: ['Game', 'Adaptive'] },
-  { id: 3, name: 'Orchestration Prep', type: 'Lesson', duration: 30, sessions: 1, 
-    description: 'Prepare orchestral scores and sessions efficiently, ready for recording.', 
-    tags: ['Orchestration', 'Recording'] },
-  { id: 4, name: 'Assignments Project', type: 'Assignment', duration: 60, sessions: 2, 
-    description: 'Complete a project assignment with 2 guided sessions and feedback.', 
-    tags: ['Project', 'Portfolio'] },
-  { id: 5, name: 'DAW Workflow', type: 'Mini-Course', duration: 45, sessions: 1, 
-    description: 'Master essential DAW functions and workflow tips for fast, professional scoring.', 
-    tags: ['DAW', 'Workflow'] },
-  { id: 6, name: 'Director Meeting Prep', type: 'Lesson', duration: 30, sessions: 1, 
-    description: 'Learn how to effectively meet with directors and handle music briefs.', 
-    tags: ['Film', 'Professional'] },
+const TOPICS = [
+  {
+    id: 1,
+    name: 'Spotting a Film',
+    type: 'Mini-course',
+    description: 'Learn the 5 crucial decisions when spotting a film.',
+    tags: ['Film', 'Technique'],
+    sessionsRequired: 1
+  },
+  {
+    id: 2,
+    name: 'FMOD Basics',
+    type: 'Mini-course',
+    description: 'Understand the essentials of FMOD for game music.',
+    tags: ['Game', 'Tech'],
+    sessionsRequired: 1
+  },
+  {
+    id: 3,
+    name: 'Portfolio Assignment: Film',
+    type: 'Assignment',
+    description: 'Create a portfolio piece for film scoring. Requires 2 sessions.',
+    tags: ['Film', 'Portfolio'],
+    sessionsRequired: 2
+  },
+  // Add more topics here...
 ];
 
-const allTags = [...new Set(topics.flatMap(t => t.tags))];
-const types = ['All', 'Lesson', 'Mini-Course', 'Assignment'];
+const PATHWAYS = [
+  {
+    name: 'Film Portfolio',
+    topicIds: [1, 3]
+  },
+  {
+    name: 'Game Portfolio',
+    topicIds: [2]
+  },
+  {
+    name: 'Game Music Essentials',
+    topicIds: [2]
+  },
+  {
+    name: 'Entrance Exam Prep',
+    topicIds: [1,2]
+  }
+];
 
-const pathways = {
-  'Entrance Exam Prep': [1,3,5],
-  'Film Portfolio Builder': [1,6,4],
-  'Game Portfolio Builder': [2,4,5],
-  'Learn Game Music': [2,5,4]
-};
-
-const sessionPacks = [
-  { label: '1 Session', sessions: 1, discount: 0 },
-  { label: '5 Sessions', sessions: 5, discount: 0.1 },
-  { label: '10 Sessions', sessions: 10, discount: 0.2 },
-  { label: '20 Sessions', sessions: 20, discount: 0.3 },
+const SESSION_PACKS = [
+  { sessions: 1, discount: 0 },
+  { sessions: 5, discount: 0.1 },
+  { sessions: 10, discount: 0.2 },
+  { sessions: 20, discount: 0.3 }
 ];
 
 function App() {
-  const [selectedPathway, setSelectedPathway] = useState('Entrance Exam Prep');
-  const [coursePlan, setCoursePlan] = useState([]);
-  const [sessionPack, setSessionPack] = useState(sessionPacks[0]);
+  const savedSelection = JSON.parse(localStorage.getItem('saaSelection')) || [];
+  const [selectedTopics, setSelectedTopics] = useState(savedSelection);
   const [selectedTopic, setSelectedTopic] = useState(null);
-
-  // Filters
-  const [tagFilter, setTagFilter] = useState('All');
-  const [typeFilter, setTypeFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filterTag, setFilterTag] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [search, setSearch] = useState('');
+  const [sessionPack, setSessionPack] = useState(1);
+  const [pathway, setPathway] = useState(null);
 
   useEffect(() => {
-    const savedPlan = JSON.parse(localStorage.getItem('saa_course_plan'));
-    if(savedPlan) setCoursePlan(savedPlan);
+    localStorage.setItem('saaSelection', JSON.stringify(selectedTopics));
+  }, [selectedTopics]);
+
+  // Auto-send iframe height
+  useEffect(() => {
+    const sendHeight = () => {
+      const height = document.body.scrollHeight;
+      window.parent.postMessage({ type: 'setHeight', height }, '*');
+    };
+    sendHeight();
+    const observer = new MutationObserver(sendHeight);
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', sendHeight);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', sendHeight);
+    };
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('saa_course_plan', JSON.stringify(coursePlan));
-  }, [coursePlan]);
+  const filteredTopics = TOPICS.filter(t => 
+    (filterTag ? t.tags.includes(filterTag) : true) &&
+    (filterType ? t.type === filterType : true) &&
+    (search ? t.name.toLowerCase().includes(search.toLowerCase()) : true)
+  );
 
-  useEffect(() => {
-    const ids = pathways[selectedPathway];
-    const initialPlan = topics.filter(t => ids.includes(t.id));
-    setCoursePlan(initialPlan);
-  }, [selectedPathway]);
-
-  const addTopic = (topic) => {
-    const totalSessions = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
-    if(totalSessions + topic.sessions <= sessionPack.sessions){
-      setCoursePlan([...coursePlan, topic]);
+  const toggleTopic = (topic) => {
+    if(selectedTopics.find(t=>t.id===topic.id)){
+      setSelectedTopics(selectedTopics.filter(t=>t.id!==topic.id));
     } else {
-      alert('Not enough sessions in your pack!');
+      const totalSessions = selectedTopics.reduce((sum,t)=>sum+t.sessionsRequired,0) + topic.sessionsRequired;
+      if(totalSessions <= sessionPack) setSelectedTopics([...selectedTopics, topic]);
+      else alert(`This selection exceeds your session pack of ${sessionPack} sessions.`);
     }
   };
 
-  const removeTopic = (id) => {
-    setCoursePlan(coursePlan.filter(t => t.id !== id));
+  const applyPathway = (p) => {
+    setPathway(p.name);
+    const pathwayTopics = TOPICS.filter(t=>p.topicIds.includes(t.id));
+    const totalSessions = pathwayTopics.reduce((sum,t)=>sum+t.sessionsRequired,0);
+    if(totalSessions <= sessionPack){
+      setSelectedTopics(pathwayTopics);
+    } else {
+      alert(`Pathway exceeds your session pack. Adjust sessions or selection.`);
+    }
   };
 
-  const totalSessionsUsed = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
-  const totalPrice = (sessionPack.sessions * 50) * (1 - sessionPack.discount);
-
-  const filteredTopics = topics.filter(t => {
-    const matchesTag = tagFilter === 'All' || t.tags.includes(tagFilter);
-    const matchesType = typeFilter === 'All' || t.type === typeFilter;
-    const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTag && matchesType && matchesSearch;
-  });
-
   return (
-    <div style={{display:'flex', padding:'20px'}}>
-      {/* Left Panel: Topic Library */}
-      <div style={{flex:1, marginRight:'20px'}}>
-        <h2>Select Pathway</h2>
-        <select value={selectedPathway} onChange={e=>setSelectedPathway(e.target.value)}>
-          {Object.keys(pathways).map(p=><option key={p} value={p}>{p}</option>)}
+    <div className="container">
+      <h1>Sound Arcade Academy — Course Builder</h1>
+
+      {/* Session Pack Selector */}
+      <div className="session-pack">
+        <label>Session Pack: </label>
+        <select value={sessionPack} onChange={e=>setSessionPack(Number(e.target.value))}>
+          {SESSION_PACKS.map(p=>(
+            <option key={p.sessions} value={p.sessions}>
+              {p.sessions} sessions {p.discount>0 ? `(${p.discount*100}% off)` : ''}
+            </option>
+          ))}
         </select>
+      </div>
 
-        <h3 style={{marginTop:'15px'}}>Filters</h3>
-        <div>
-          <label>Tag: </label>
-          <select value={tagFilter} onChange={e=>setTagFilter(e.target.value)}>
-            <option value="All">All</option>
-            {allTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
-          </select>
-        </div>
-        <div>
-          <label>Type: </label>
-          <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}>
-            {types.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
-        <div>
-          <label>Search: </label>
-          <input type="text" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Search by name" />
-        </div>
+      {/* Pathways */}
+      <div className="pathways">
+        <h3>Predefined Pathways:</h3>
+        {PATHWAYS.map(p => (
+          <button key={p.name} onClick={()=>applyPathway(p)} style={{marginRight:'6px', marginBottom:'6px', backgroundColor:'#f4147f', color:'#fff'}}>
+            {p.name}
+          </button>
+        ))}
+      </div>
 
-        <h2 style={{marginTop:'20px'}}>Topic Library</h2>
-        {filteredTopics.map(t => (
-          <div key={t.id} className="topic-row" style={{padding:'8px', border:'1px solid #ccc', margin:'6px 0', borderRadius:'6px'}}>
-            <div>
-              <strong>{t.name}</strong> ({t.type}, {t.duration} min, {t.sessions} session{t.sessions>1?'s':''})
-              <button className="add-remove" style={{marginLeft:'10px'}} onClick={()=>addTopic(t)}>Add</button>
-              <button className="info" style={{marginLeft:'6px'}} onClick={()=>setSelectedTopic(t)}>Info</button>
+      {/* Filters & Search */}
+      <div className="filters">
+        <select onChange={e=>setFilterType(e.target.value)} value={filterType}>
+          <option value="">Filter by Type</option>
+          <option value="1:1 lesson">1:1 lesson</option>
+          <option value="Mini-course">Mini-course</option>
+          <option value="Assignment">Assignment</option>
+        </select>
+        <select onChange={e=>setFilterTag(e.target.value)} value={filterTag}>
+          <option value="">Filter by Tag</option>
+          <option value="Film">Film</option>
+          <option value="Game">Game</option>
+          <option value="Tech">Tech</option>
+          <option value="Portfolio">Portfolio</option>
+          <option value="Technique">Technique</option>
+        </select>
+        <input type="text" placeholder="Search by name" value={search} onChange={e=>setSearch(e.target.value)} />
+      </div>
+
+      {/* Topics List */}
+      <div className="topics-list">
+        {filteredTopics.map(topic=>(
+          <div key={topic.id} className="topic">
+            <div style={{flex:'1'}} onClick={()=>toggleTopic(topic)}>
+              {topic.name} ({topic.type}) - {topic.sessionsRequired} session(s)
             </div>
-            <div>
-              {t.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+            <div style={{display:'flex', gap:'4px', color:'#aaa'}}>
+              {topic.tags.map(tag=><span key={tag} className="tag">{tag}</span>)}
             </div>
+            <button className="info" onClick={()=>setSelectedTopic(topic)}>Info</button>
           </div>
         ))}
       </div>
 
-      {/* Right Panel: Course Plan */}
-      <div style={{flex:1}}>
-        <h2>Your Course Plan</h2>
-        <div>
-          Session Pack: 
-          <select value={sessionPack.label} onChange={e=>setSessionPack(sessionPacks.find(sp=>sp.label===e.target.value))}>
-            {sessionPacks.map(sp=><option key={sp.label} value={sp.label}>{sp.label}</option>)}
-          </select>
-        </div>
-        <div>Total Sessions Used: {totalSessionsUsed}/{sessionPack.sessions}</div>
-        <div style={{marginTop:'10px'}}>
-          {coursePlan.map((t,index) => (
-            <div key={index} className="topic-row" style={{padding:'8px', border:'1px solid #666', margin:'6px 0', borderRadius:'6px', background:'#f0f0f0'}}>
-              <div>
-                {t.name} ({t.type})
-                <button className="add-remove" onClick={()=>removeTopic(t.id)}>Remove</button>
-                <button className="info" onClick={()=>setSelectedTopic(t)}>Info</button>
-              </div>
-              <div>
-                {t.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{marginTop:'20px'}}>
-          <strong>Total Price: £{totalPrice.toFixed(2)}</strong>
-        </div>
+      {/* Selected Topics */}
+      <div className="selected-topics">
+        <h3>Selected Topics:</h3>
+        {selectedTopics.length===0 ? <p>None</p> : selectedTopics.map(t=>(
+          <div key={t.id}>{t.name} ({t.type})</div>
+        ))}
       </div>
 
-      {/* Modal for Topic Description */}
+      {/* Modal for Info */}
       {selectedTopic && (
         <div className="modal-overlay" onClick={()=>setSelectedTopic(null)}>
           <div className="modal-content" onClick={e=>e.stopPropagation()}>
             <h3>{selectedTopic.name}</h3>
-            <p>{selectedTopic.description}</p>
+            <p style={{color:'#666'}}>{selectedTopic.description}</p>
             <div style={{marginTop:'6px'}}>
               {selectedTopic.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
             </div>
