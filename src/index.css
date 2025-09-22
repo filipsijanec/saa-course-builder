@@ -250,6 +250,40 @@ button.info:hover {
   background-color: #f57c00;
 }
 
+.notification-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.notification-yes-button,
+.notification-no-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.notification-yes-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.notification-yes-button:hover {
+  background-color: #388e3c;
+}
+
+.notification-no-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.notification-no-button:hover {
+  background-color: #d32f2f;
+}
+
 @keyframes modalSlideIn {
   from {
     transform: scale(0.8);
@@ -258,6 +292,36 @@ button.info:hover {
   to {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+/* Slot swap animation */
+.slot-swapping {
+  animation: swapPulse 0.8s ease-out;
+  border: 2px solid #4CAF50 !important;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.5) !important;
+}
+
+@keyframes swapPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+  }
+  25% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(76, 175, 80, 0.3);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 12px rgba(76, 175, 80, 0.1);
+  }
+  75% {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 8px rgba(76, 175, 80, 0.2);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
   }
 }
 
