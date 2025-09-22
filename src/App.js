@@ -42,9 +42,12 @@ const sessionPacks = [
 function App() {
   const [selectedPathway, setSelectedPathway] = useState('Entrance Exam Prep');
   const [coursePlan, setCoursePlan] = useState([]);
-  const [sessionPack, setSessionPack] = useState(sessionPacks[0]);
+  const [sessionPack, setSessionPack] = useState(sessionPacks[1]); // Default to 5 sessions
   const [selectedTopic, setSelectedTopic] = useState(null);
-  const [animatingTopic, setAnimatingTopic] = useState(null);
+  const [notification, setNotification] = useState(null);
+  
+  // New: slot-based storage for precise positioning
+  const [sessionSlots, setSessionSlots] = useState({});
 
   // Filters
   const [tagFilter, setTagFilter] = useState('All');
@@ -54,24 +57,54 @@ function App() {
   useEffect(() => {
     const savedPlan = JSON.parse(localStorage.getItem('saa_course_plan'));
     if(savedPlan) setCoursePlan(savedPlan);
+    
+    const savedSlots = JSON.parse(localStorage.getItem('saa_session_slots'));
+    if(savedSlots) setSessionSlots(savedSlots);
   }, []);
 
   useEffect(() => {
     localStorage.setItem('saa_course_plan', JSON.stringify(coursePlan));
-  }, [coursePlan]);
+    localStorage.setItem('saa_session_slots', JSON.stringify(sessionSlots));
+  }, [coursePlan, sessionSlots]);
 
   useEffect(() => {
     const ids = pathways[selectedPathway];
     const initialPlan = topics.filter(t => ids.includes(t.id));
     setCoursePlan(initialPlan);
+    
+    // Create sequential slot mapping for pathway topics
+    const newSlots = {};
+    let slotIndex = 0;
+    for(let topic of initialPlan) {
+      for(let i = 0; i < topic.sessions; i++) {
+        newSlots[slotIndex] = { topicId: topic.id, sessionIndex: i };
+        slotIndex++;
+      }
+    }
+    setSessionSlots(newSlots);
   }, [selectedPathway]);
 
+  const showNotification = (message, type = 'error') => {
+    setNotification({ message, type });
+    // Remove setTimeout - now requires manual dismissal
+  };
+
+  const closeNotification = () => {
+    setNotification(null);
+  };
+
   const addTopic = (topic, event) => {
-    const totalSessions = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
-    if(totalSessions + topic.sessions <= sessionPack.sessions){
+    // Check if topic already exists
+    if(coursePlan.find(t => t.id === topic.id)) {
+      showNotification(`"${topic.name}" is already added to your course plan! Please choose a different topic.`, 'error');
+      return;
+    }
+    
+    const usedSlots = Object.keys(sessionSlots).length;
+    if(usedSlots + topic.sessions <= sessionPack.sessions){
       // Start animation
       const sourceElement = event.target.closest('.topic-row');
-      const targetSlotIndex = totalSessions; // First available slot
+      const targetSlotIndex = usedSlots; // First available slot
       
       if(sourceElement) {
         // Create flying element
@@ -104,22 +137,40 @@ function App() {
           
           // Clean up after animation
           setTimeout(() => {
+            // Add to course plan and slots
             setCoursePlan([...coursePlan, topic]);
+            const newSlots = { ...sessionSlots };
+            for(let i = 0; i < topic.sessions; i++) {
+              newSlots[targetSlotIndex + i] = { topicId: topic.id, sessionIndex: i };
+            }
+            setSessionSlots(newSlots);
+            
             document.body.removeChild(flyingElement);
             sourceElement.classList.remove('adding');
             targetSlot.classList.remove('slot-receiving');
           }, 800);
         } else {
           // Fallback if no target slot found
-          setCoursePlan([...coursePlan, topic]);
+          addTopicToSlots(topic, usedSlots);
         }
       } else {
         // Fallback if no source element found
-        setCoursePlan([...coursePlan, topic]);
+        addTopicToSlots(topic, usedSlots);
       }
     } else {
-      alert('Not enough sessions in your pack!');
+      showNotification(`Not enough sessions in your ${sessionPack.sessions}-session pack! You need ${topic.sessions} more sessions.`, 'warning');
     }
+  };
+
+  const addTopicToSlots = (topic, startSlot) => {
+    if(coursePlan.find(t => t.id === topic.id)) return;
+    
+    setCoursePlan([...coursePlan, topic]);
+    const newSlots = { ...sessionSlots };
+    for(let i = 0; i < topic.sessions; i++) {
+      newSlots[startSlot + i] = { topicId: topic.id, sessionIndex: i };
+    }
+    setSessionSlots(newSlots);
   };
 
   const removeTopic = (id, event) => {
@@ -163,13 +214,29 @@ function App() {
       
       // Clean up and remove topic after animation
       setTimeout(() => {
+        // Remove from course plan and slots
         setCoursePlan(coursePlan.filter(t => t.id !== id));
+        const newSlots = { ...sessionSlots };
+        Object.keys(newSlots).forEach(slotIndex => {
+          if(newSlots[slotIndex].topicId === id) {
+            delete newSlots[slotIndex];
+          }
+        });
+        setSessionSlots(newSlots);
+        
         document.body.removeChild(flyingElement);
         sourceElement.classList.remove('slot-removing');
       }, 1000);
     } else {
       // Fallback if no source element found
       setCoursePlan(coursePlan.filter(t => t.id !== id));
+      const newSlots = { ...sessionSlots };
+      Object.keys(newSlots).forEach(slotIndex => {
+        if(newSlots[slotIndex].topicId === id) {
+          delete newSlots[slotIndex];
+        }
+      });
+      setSessionSlots(newSlots);
     }
   };
 
@@ -191,16 +258,31 @@ function App() {
     e.preventDefault();
     const slot = e.currentTarget;
     
-    // Get the topic being dragged
     try {
       const dragData = e.dataTransfer.getData('application/json');
       if (dragData) {
         const topic = JSON.parse(dragData);
-        const totalSessions = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
-        const availableSlots = sessionPack.sessions - totalSessions;
         
-        // Check if this slot is available and topic fits
-        if (slotIndex >= totalSessions && topic.sessions <= availableSlots) {
+        // Check if topic already exists
+        if(coursePlan.find(t => t.id === topic.id)) {
+          slot.classList.remove('drag-over');
+          slot.classList.add('drag-invalid');
+          return;
+        }
+        
+        // Check if all slots needed for this topic are empty
+        let allSlotsEmpty = true;
+        for(let i = 0; i < topic.sessions; i++) {
+          if(sessionSlots[slotIndex + i]) {
+            allSlotsEmpty = false;
+            break;
+          }
+        }
+        
+        // Check if topic fits within session pack
+        const canFitFromThisSlot = slotIndex + topic.sessions <= sessionPack.sessions;
+        
+        if (allSlotsEmpty && canFitFromThisSlot) {
           slot.classList.remove('drag-invalid');
           slot.classList.add('drag-over');
         } else {
@@ -209,7 +291,6 @@ function App() {
         }
       }
     } catch (error) {
-      // If we can't parse the data, show invalid state
       slot.classList.remove('drag-over');
       slot.classList.add('drag-invalid');
     }
@@ -229,12 +310,34 @@ function App() {
       const dragData = e.dataTransfer.getData('application/json');
       if (dragData) {
         const topic = JSON.parse(dragData);
-        const totalSessions = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
         
-        // Check if drop is valid
-        if (slotIndex >= totalSessions && topic.sessions <= (sessionPack.sessions - totalSessions)) {
-          // Add topic with animation effect
+        // Check if topic already exists
+        if(coursePlan.find(t => t.id === topic.id)) {
+          showNotification(`"${topic.name}" is already added to your course plan!`, 'error');
+          slot.classList.add('drag-invalid');
+          setTimeout(() => slot.classList.remove('drag-invalid'), 500);
+          return;
+        }
+        
+        // Check if all slots needed for this topic are empty
+        let allSlotsEmpty = true;
+        for(let i = 0; i < topic.sessions; i++) {
+          if(sessionSlots[slotIndex + i]) {
+            allSlotsEmpty = false;
+            break;
+          }
+        }
+        
+        const canFitFromThisSlot = slotIndex + topic.sessions <= sessionPack.sessions;
+        
+        if (allSlotsEmpty && canFitFromThisSlot) {
+          // Add topic to course plan and slots
           setCoursePlan([...coursePlan, topic]);
+          const newSlots = { ...sessionSlots };
+          for(let i = 0; i < topic.sessions; i++) {
+            newSlots[slotIndex + i] = { topicId: topic.id, sessionIndex: i };
+          }
+          setSessionSlots(newSlots);
           
           // Add visual feedback
           slot.classList.add('slot-receiving');
@@ -243,6 +346,11 @@ function App() {
           }, 600);
         } else {
           // Invalid drop - show error feedback
+          const errorMessage = !canFitFromThisSlot 
+            ? `"${topic.name}" needs ${topic.sessions} sessions but only ${sessionPack.sessions - slotIndex} slots available from this position!`
+            : `Cannot place "${topic.name}" here - some slots are already occupied!`;
+          showNotification(errorMessage, 'error');
+          
           slot.classList.add('drag-invalid');
           setTimeout(() => {
             slot.classList.remove('drag-invalid');
@@ -254,7 +362,7 @@ function App() {
     }
   };
 
-  const totalSessionsUsed = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
+  const totalSessionsUsed = Object.keys(sessionSlots).length;
   const totalPrice = (sessionPack.sessions * 50) * (1 - sessionPack.discount);
 
   const filteredTopics = topics.filter(t => {
@@ -266,6 +374,20 @@ function App() {
 
   return (
     <div style={{display:'flex', padding:'20px'}}>
+      {/* Notification Modal */}
+      {notification && (
+        <div className="modal-overlay" onClick={closeNotification}>
+          <div className={`notification-modal notification-modal-${notification.type}`} onClick={(e) => e.stopPropagation()}>
+            <div className="notification-content">
+              {notification.message}
+            </div>
+            <button className="notification-ok-button" onClick={closeNotification}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Left Panel: Topic Library */}
       <div style={{flex:1, marginRight:'20px'}}>
         <h2>Select Pathway</h2>
@@ -330,21 +452,14 @@ function App() {
           <h3>Session Slots</h3>
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'8px', marginTop:'10px'}}>
             {Array.from({length: sessionPack.sessions}, (_, slotIndex) => {
-              // Calculate which topic occupies this slot
-              let currentSlot = 0;
+              // Get topic for this slot from sessionSlots
+              const slotData = sessionSlots[slotIndex];
               let topicForSlot = null;
               let sessionWithinTopic = 0;
               
-              for(let topic of coursePlan) {
-                for(let i = 0; i < topic.sessions; i++) {
-                  if(currentSlot === slotIndex) {
-                    topicForSlot = topic;
-                    sessionWithinTopic = i + 1;
-                    break;
-                  }
-                  currentSlot++;
-                }
-                if(topicForSlot) break;
+              if(slotData) {
+                topicForSlot = coursePlan.find(t => t.id === slotData.topicId);
+                sessionWithinTopic = slotData.sessionIndex + 1;
               }
               
               return (

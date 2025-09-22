@@ -177,3 +177,127 @@ button.info:hover {
   border-color: #f44336 !important;
   box-shadow: 0 0 15px rgba(244, 67, 54, 0.4);
 }
+
+/* Notification Modal Styles */
+.notification-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  animation: modalSlideIn 0.3s ease-out;
+  text-align: center;
+}
+
+.notification-modal-error {
+  border-top: 4px solid #f44336;
+}
+
+.notification-modal-success {
+  border-top: 4px solid #4caf50;
+}
+
+.notification-modal-warning {
+  border-top: 4px solid #ff9800;
+}
+
+.notification-content {
+  margin-bottom: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.notification-ok-button {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 80px;
+}
+
+.notification-ok-button:hover {
+  background-color: #1976D2;
+}
+
+.notification-modal-error .notification-ok-button {
+  background-color: #f44336;
+}
+
+.notification-modal-error .notification-ok-button:hover {
+  background-color: #d32f2f;
+}
+
+.notification-modal-success .notification-ok-button {
+  background-color: #4caf50;
+}
+
+.notification-modal-success .notification-ok-button:hover {
+  background-color: #388e3c;
+}
+
+.notification-modal-warning .notification-ok-button {
+  background-color: #ff9800;
+}
+
+.notification-modal-warning .notification-ok-button:hover {
+  background-color: #f57c00;
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Remove old notification styles */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  z-index: 1000;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+.notification-error {
+  background-color: #f44336;
+  border-left: 4px solid #d32f2f;
+}
+
+.notification-success {
+  background-color: #4caf50;
+  border-left: 4px solid #388e3c;
+}
+
+.notification-warning {
+  background-color: #ff9800;
+  border-left: 4px solid #f57c00;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
