@@ -23,24 +23,24 @@ button {
   transition: background-color 0.2s ease;
 }
 
-/* Pink buttons (Add / Remove) */
+/* Green buttons (Add / Remove) */
 button.add-remove {
-  background-color: #f4147f;
+  background-color: #28a745;
   color: #fff;
 }
 
 button.add-remove:hover {
-  background-color: #c20f65;
+  background-color: #218838;
 }
 
-/* Info buttons light gray */
+/* Info buttons bright pink */
 button.info {
-  background-color: #ccc;
-  color: #333;
+  background-color: #f4147f;
+  color: white;
 }
 
 button.info:hover {
-  background-color: #bbb;
+  background-color: #d1126a;
 }
 
 /* Modal styles */
@@ -146,6 +146,24 @@ button.info:hover {
 .topic-row.adding {
   transform: scale(0.95);
   opacity: 0.7;
+}
+
+/* Breathing animation for discount text */
+@keyframes breathe {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.discount-breathe {
+  animation: breathe 2s ease-in-out infinite;
+  display: inline-block;
 }
 
 /* Drag and drop styles */
@@ -323,6 +341,38 @@ button.info:hover {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
   }
+}
+
+/* X button for topic removal */
+.topic-remove-x {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: #cccccc;
+  color: #666666;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background-color 0.2s, transform 0.1s;
+  z-index: 10;
+}
+
+.topic-remove-x:hover {
+  background-color: #999999;
+  color: #333333;
+  transform: scale(1.1);
+}
+
+.topic-remove-x:active {
+  transform: scale(0.95);
 }
 
 /* Remove old notification styles */

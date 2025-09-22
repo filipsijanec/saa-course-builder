@@ -37,9 +37,9 @@ const pathways = {
 
 const sessionPacks = [
   { label: '1 Session', sessions: 1, discount: 0 },
-  { label: '5 Sessions', sessions: 5, discount: 0.1 },
-  { label: '10 Sessions', sessions: 10, discount: 0.2 },
-  { label: '20 Sessions', sessions: 20, discount: 0.3 },
+  { label: '5 Sessions (-10%)', sessions: 5, discount: 0.1 },
+  { label: '10 Sessions (-20%)', sessions: 10, discount: 0.2 },
+  { label: '20 Sessions (-30%)', sessions: 20, discount: 0.3 },
 ];
 
 function App() {
@@ -951,7 +951,8 @@ function App() {
                     minHeight: '80px',
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    position: 'relative' // Add relative positioning for absolute × button
                   }}
                 >
                   {topicForSlot ? (
@@ -961,6 +962,15 @@ function App() {
                       onDragEnd={handleDragEnd}
                       style={{cursor: 'move'}}
                     >
+                      {/* X button for removal */}
+                      <button 
+                        className="topic-remove-x"
+                        onClick={(e)=>removeTopic(topicForSlot.id, e)}
+                        title="Remove topic"
+                      >
+                        ×
+                      </button>
+                      
                       <div style={{fontWeight: 'bold', fontSize: '14px', marginBottom: '4px'}}>
                         {topicForSlot.name}
                       </div>
@@ -968,13 +978,6 @@ function App() {
                         Session {sessionWithinTopic} of {topicForSlot.sessions} • {topicForSlot.type}
                       </div>
                       <div>
-                        <button 
-                          className="add-remove" 
-                          style={{fontSize: '11px', padding: '2px 6px'}}
-                          onClick={(e)=>removeTopic(topicForSlot.id, e)}
-                        >
-                          Remove
-                        </button>
                         <button 
                           className="info" 
                           style={{fontSize: '11px', padding: '2px 6px'}}
@@ -1002,6 +1005,11 @@ function App() {
         </div>
         <div style={{marginTop:'20px'}}>
           <strong>Total Price: £{totalPrice.toFixed(2)}</strong>
+          {sessionPack.discount > 0 && (
+            <span className="discount-breathe" style={{color: '#28a745', marginLeft: '10px'}}>
+              (-{(sessionPack.discount * 100).toFixed(0)}% discount applied)
+            </span>
+          )}
         </div>
       </div>
 
