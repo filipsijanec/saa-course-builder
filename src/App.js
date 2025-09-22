@@ -833,7 +833,7 @@ function App() {
   });
 
   return (
-    <div style={{display:'flex', padding:'20px'}}>
+    <div className="app-container app-main" style={{display:'flex', padding:'20px'}}>
       {/* Notification Modal */}
       {notification && (
         <div className="modal-overlay" onClick={closeNotification}>
@@ -860,7 +860,7 @@ function App() {
       )}
       
       {/* Left Panel: Topic Library */}
-      <div style={{flex:1, marginRight:'20px'}}>
+      <div className="app-left-panel" style={{flex:1, marginRight:'20px'}}>
         <h2>Select Pathway</h2>
         <select value={selectedPathway} onChange={e=>setSelectedPathway(e.target.value)}>
           {Object.keys(pathways).map(p=><option key={p} value={p}>{p}</option>)}
@@ -921,7 +921,7 @@ function App() {
         {/* Session Slots */}
         <div style={{marginTop:'15px'}}>
           <h3>Session Slots</h3>
-          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'8px', marginTop:'10px'}}>
+          <div className="session-slots-grid" style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'8px', marginTop:'10px'}}>
             {Array.from({length: sessionPack.sessions}, (_, slotIndex) => {
               // Get topic for this slot from sessionSlots
               const slotData = sessionSlots[slotIndex];

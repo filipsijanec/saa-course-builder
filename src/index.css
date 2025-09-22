@@ -415,3 +415,100 @@ button.info:hover {
     opacity: 1;
   }
 }
+
+/* Responsive Design */
+/* Base styles for mobile-first approach */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+}
+
+/* Container responsive adjustments */
+.app-container {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Tablet styles (768px and up) */
+@media (max-width: 768px) {
+  .app-main {
+    flex-direction: column !important;
+    padding: 10px !important;
+  }
+  
+  .app-left-panel {
+    margin-right: 0 !important;
+    margin-bottom: 20px !important;
+  }
+  
+  .session-slots-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 6px !important;
+  }
+  
+  .topic-row {
+    padding: 6px !important;
+    margin: 4px 0 !important;
+  }
+  
+  .modal-content {
+    max-width: 90% !important;
+    margin: 10% auto !important;
+  }
+  
+  .notification-modal {
+    max-width: 90% !important;
+  }
+}
+
+/* Mobile styles (480px and down) */
+@media (max-width: 480px) {
+  .app-main {
+    padding: 5px !important;
+  }
+  
+  .session-slots-grid {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+  
+  .topic-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 8px !important;
+  }
+  
+  .topic-row button {
+    margin-top: 8px !important;
+    margin-left: 0 !important;
+    align-self: stretch !important;
+  }
+  
+  .modal-content {
+    margin: 5% auto !important;
+    padding: 15px !important;
+  }
+  
+  .notification-modal {
+    margin: 20% auto !important;
+    padding: 15px !important;
+  }
+  
+  h2 {
+    font-size: 1.3em;
+  }
+  
+  h3 {
+    font-size: 1.1em;
+  }
+  
+  select, input {
+    width: 100% !important;
+    margin-bottom: 10px !important;
+  }
+}
