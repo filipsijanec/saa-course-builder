@@ -122,8 +122,55 @@ function App() {
     }
   };
 
-  const removeTopic = (id) => {
-    setCoursePlan(coursePlan.filter(t => t.id !== id));
+  const removeTopic = (id, event) => {
+    const topicToRemove = coursePlan.find(t => t.id === id);
+    if(!topicToRemove) return;
+    
+    const sourceElement = event?.target.closest('.session-slot');
+    
+    if(sourceElement) {
+      // Create flying element for removal animation
+      const flyingElement = sourceElement.cloneNode(true);
+      flyingElement.className = 'session-slot topic-flying-away';
+      flyingElement.style.position = 'fixed';
+      flyingElement.style.pointerEvents = 'none';
+      flyingElement.style.zIndex = '500';
+      
+      // Get source position
+      const sourceRect = sourceElement.getBoundingClientRect();
+      flyingElement.style.left = sourceRect.left + 'px';
+      flyingElement.style.top = sourceRect.top + 'px';
+      flyingElement.style.width = sourceRect.width + 'px';
+      flyingElement.style.height = sourceRect.height + 'px';
+      
+      // Random direction for flying away (upper corners)
+      const directions = [
+        { x: -200, y: -150 }, // upper left
+        { x: 200, y: -150 },  // upper right
+        { x: -300, y: -100 }, // far upper left
+        { x: 300, y: -100 },  // far upper right
+      ];
+      const randomDirection = directions[Math.floor(Math.random() * directions.length)];
+      
+      flyingElement.style.setProperty('--fly-out-x', randomDirection.x + 'px');
+      flyingElement.style.setProperty('--fly-out-y', randomDirection.y + 'px');
+      
+      // Add visual feedback to source slot
+      sourceElement.classList.add('slot-removing');
+      
+      // Add flying element to DOM
+      document.body.appendChild(flyingElement);
+      
+      // Clean up and remove topic after animation
+      setTimeout(() => {
+        setCoursePlan(coursePlan.filter(t => t.id !== id));
+        document.body.removeChild(flyingElement);
+        sourceElement.classList.remove('slot-removing');
+      }, 1000);
+    } else {
+      // Fallback if no source element found
+      setCoursePlan(coursePlan.filter(t => t.id !== id));
+    }
   };
 
   const totalSessionsUsed = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
@@ -242,7 +289,7 @@ function App() {
                         <button 
                           className="add-remove" 
                           style={{fontSize: '11px', padding: '2px 6px'}}
-                          onClick={()=>removeTopic(topicForSlot.id)}
+                          onClick={(e)=>removeTopic(topicForSlot.id, e)}
                         >
                           Remove
                         </button>

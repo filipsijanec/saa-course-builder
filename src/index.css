@@ -94,11 +94,37 @@ button.info:hover {
   }
 }
 
+@keyframes flyAwayAndDisperse {
+  0% {
+    transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  30% {
+    transform: translateX(var(--fly-out-x)) translateY(var(--fly-out-y)) scale(0.9) rotate(10deg);
+    opacity: 0.8;
+  }
+  70% {
+    transform: translateX(calc(var(--fly-out-x) * 1.5)) translateY(calc(var(--fly-out-y) * 1.5)) scale(0.4) rotate(25deg);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateX(calc(var(--fly-out-x) * 2)) translateY(calc(var(--fly-out-y) * 2)) scale(0) rotate(45deg);
+    opacity: 0;
+  }
+}
+
 .topic-flying {
   position: fixed;
   z-index: 500;
   pointer-events: none;
   animation: flyToSlot 0.8s ease-in-out forwards;
+}
+
+.topic-flying-away {
+  position: fixed;
+  z-index: 500;
+  pointer-events: none;
+  animation: flyAwayAndDisperse 1s ease-out forwards;
 }
 
 .session-slot {
@@ -108,6 +134,13 @@ button.info:hover {
 .session-slot.slot-receiving {
   transform: scale(1.05);
   box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+}
+
+.session-slot.slot-removing {
+  transform: scale(0.95);
+  background-color: #ffebee !important;
+  border-color: #f44336 !important;
+  box-shadow: 0 0 15px rgba(244, 67, 54, 0.3);
 }
 
 .topic-row.adding {
