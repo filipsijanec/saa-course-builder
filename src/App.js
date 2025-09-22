@@ -44,6 +44,7 @@ function App() {
   const [coursePlan, setCoursePlan] = useState([]);
   const [sessionPack, setSessionPack] = useState(sessionPacks[0]);
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const [animatingTopic, setAnimatingTopic] = useState(null);
 
   // Filters
   const [tagFilter, setTagFilter] = useState('All');
@@ -65,10 +66,57 @@ function App() {
     setCoursePlan(initialPlan);
   }, [selectedPathway]);
 
-  const addTopic = (topic) => {
+  const addTopic = (topic, event) => {
     const totalSessions = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
     if(totalSessions + topic.sessions <= sessionPack.sessions){
-      setCoursePlan([...coursePlan, topic]);
+      // Start animation
+      const sourceElement = event.target.closest('.topic-row');
+      const targetSlotIndex = totalSessions; // First available slot
+      
+      if(sourceElement) {
+        // Create flying element
+        const flyingElement = sourceElement.cloneNode(true);
+        flyingElement.className = 'topic-row topic-flying';
+        flyingElement.style.position = 'fixed';
+        flyingElement.style.pointerEvents = 'none';
+        flyingElement.style.zIndex = '500';
+        
+        // Get source position
+        const sourceRect = sourceElement.getBoundingClientRect();
+        flyingElement.style.left = sourceRect.left + 'px';
+        flyingElement.style.top = sourceRect.top + 'px';
+        flyingElement.style.width = sourceRect.width + 'px';
+        
+        // Find target slot position
+        const targetSlot = document.querySelector(`.session-slot[data-slot-index="${targetSlotIndex}"]`);
+        if(targetSlot) {
+          const targetRect = targetSlot.getBoundingClientRect();
+          const deltaX = targetRect.left - sourceRect.left;
+          const deltaY = targetRect.top - sourceRect.top;
+          
+          flyingElement.style.setProperty('--fly-x', deltaX + 'px');
+          flyingElement.style.setProperty('--fly-y', deltaY + 'px');
+          
+          // Add to DOM and start animation
+          document.body.appendChild(flyingElement);
+          sourceElement.classList.add('adding');
+          targetSlot.classList.add('slot-receiving');
+          
+          // Clean up after animation
+          setTimeout(() => {
+            setCoursePlan([...coursePlan, topic]);
+            document.body.removeChild(flyingElement);
+            sourceElement.classList.remove('adding');
+            targetSlot.classList.remove('slot-receiving');
+          }, 800);
+        } else {
+          // Fallback if no target slot found
+          setCoursePlan([...coursePlan, topic]);
+        }
+      } else {
+        // Fallback if no source element found
+        setCoursePlan([...coursePlan, topic]);
+      }
     } else {
       alert('Not enough sessions in your pack!');
     }
@@ -121,7 +169,7 @@ function App() {
           <div key={t.id} className="topic-row" style={{padding:'8px', border:'1px solid #ccc', margin:'6px 0', borderRadius:'6px'}}>
             <div>
               <strong>{t.name}</strong> ({t.type}, {t.duration} min, {t.sessions} session{t.sessions>1?'s':''})
-              <button className="add-remove" style={{marginLeft:'10px'}} onClick={()=>addTopic(t)}>Add</button>
+              <button className="add-remove" style={{marginLeft:'10px'}} onClick={(e)=>addTopic(t, e)}>Add</button>
               <button className="info" style={{marginLeft:'6px'}} onClick={()=>setSelectedTopic(t)}>Info</button>
             </div>
             <div>
@@ -140,20 +188,88 @@ function App() {
             {sessionPacks.map(sp=><option key={sp.label} value={sp.label}>{sp.label}</option>)}
           </select>
         </div>
-        <div>Total Sessions Used: {totalSessionsUsed}/{sessionPack.sessions}</div>
-        <div style={{marginTop:'10px'}}>
-          {coursePlan.map((t,index) => (
-            <div key={index} className="topic-row" style={{padding:'8px', border:'1px solid #666', margin:'6px 0', borderRadius:'6px', background:'#f0f0f0'}}>
-              <div>
-                {t.name} ({t.type})
-                <button className="add-remove" onClick={()=>removeTopic(t.id)}>Remove</button>
-                <button className="info" onClick={()=>setSelectedTopic(t)}>Info</button>
-              </div>
-              <div>
-                {t.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
-              </div>
-            </div>
-          ))}
+        <div>Sessions Used: {totalSessionsUsed}/{sessionPack.sessions}</div>
+        
+        {/* Session Slots */}
+        <div style={{marginTop:'15px'}}>
+          <h3>Session Slots</h3>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'8px', marginTop:'10px'}}>
+            {Array.from({length: sessionPack.sessions}, (_, slotIndex) => {
+              // Calculate which topic occupies this slot
+              let currentSlot = 0;
+              let topicForSlot = null;
+              let sessionWithinTopic = 0;
+              
+              for(let topic of coursePlan) {
+                for(let i = 0; i < topic.sessions; i++) {
+                  if(currentSlot === slotIndex) {
+                    topicForSlot = topic;
+                    sessionWithinTopic = i + 1;
+                    break;
+                  }
+                  currentSlot++;
+                }
+                if(topicForSlot) break;
+              }
+              
+              return (
+                <div 
+                  key={slotIndex} 
+                  className="session-slot" 
+                  data-slot-index={slotIndex}
+                  style={{
+                    padding: '12px',
+                    border: '2px dashed #ccc',
+                    borderRadius: '8px',
+                    backgroundColor: topicForSlot ? '#e8f5e8' : '#f8f8f8',
+                    borderColor: topicForSlot ? '#4caf50' : '#ccc',
+                    borderStyle: topicForSlot ? 'solid' : 'dashed',
+                    minHeight: '80px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {topicForSlot ? (
+                    <div>
+                      <div style={{fontWeight: 'bold', fontSize: '14px', marginBottom: '4px'}}>
+                        {topicForSlot.name}
+                      </div>
+                      <div style={{fontSize: '12px', color: '#666', marginBottom: '6px'}}>
+                        Session {sessionWithinTopic} of {topicForSlot.sessions} • {topicForSlot.type}
+                      </div>
+                      <div>
+                        <button 
+                          className="add-remove" 
+                          style={{fontSize: '11px', padding: '2px 6px'}}
+                          onClick={()=>removeTopic(topicForSlot.id)}
+                        >
+                          Remove
+                        </button>
+                        <button 
+                          className="info" 
+                          style={{fontSize: '11px', padding: '2px 6px'}}
+                          onClick={()=>setSelectedTopic(topicForSlot)}
+                        >
+                          Info
+                        </button>
+                      </div>
+                      <div style={{marginTop: '4px'}}>
+                        {topicForSlot.tags.map(tag => 
+                          <span key={tag} className="tag" style={{fontSize: '10px', padding: '1px 4px'}}>{tag}</span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{textAlign: 'center', color: '#999', fontSize: '14px'}}>
+                      <div style={{marginBottom: '8px'}}>Slot {slotIndex + 1}</div>
+                      <div style={{fontStyle: 'italic'}}>Add Topic</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
         <div style={{marginTop:'20px'}}>
           <strong>Total Price: £{totalPrice.toFixed(2)}</strong>

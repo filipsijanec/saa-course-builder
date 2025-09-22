@@ -77,3 +77,40 @@ button.info:hover {
   line-height: 1.5;
   color: #666;
 }
+
+/* Flying animation styles */
+@keyframes flyToSlot {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(var(--fly-x)) translateY(var(--fly-y)) scale(0.8);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(var(--fly-x)) translateY(var(--fly-y)) scale(0.6);
+    opacity: 0;
+  }
+}
+
+.topic-flying {
+  position: fixed;
+  z-index: 500;
+  pointer-events: none;
+  animation: flyToSlot 0.8s ease-in-out forwards;
+}
+
+.session-slot {
+  transition: all 0.3s ease;
+}
+
+.session-slot.slot-receiving {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+}
+
+.topic-row.adding {
+  transform: scale(0.95);
+  opacity: 0.7;
+}
