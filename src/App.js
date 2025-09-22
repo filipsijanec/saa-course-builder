@@ -173,6 +173,87 @@ function App() {
     }
   };
 
+  // Drag and drop functions
+  const handleDragStart = (e, topic) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(topic));
+    e.target.closest('.topic-row').classList.add('dragging');
+  };
+
+  const handleDragEnd = (e) => {
+    e.target.closest('.topic-row').classList.remove('dragging');
+    // Clean up any drag-over states
+    document.querySelectorAll('.session-slot').forEach(slot => {
+      slot.classList.remove('drag-over', 'drag-invalid');
+    });
+  };
+
+  const handleDragOver = (e, slotIndex) => {
+    e.preventDefault();
+    const slot = e.currentTarget;
+    
+    // Get the topic being dragged
+    try {
+      const dragData = e.dataTransfer.getData('application/json');
+      if (dragData) {
+        const topic = JSON.parse(dragData);
+        const totalSessions = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
+        const availableSlots = sessionPack.sessions - totalSessions;
+        
+        // Check if this slot is available and topic fits
+        if (slotIndex >= totalSessions && topic.sessions <= availableSlots) {
+          slot.classList.remove('drag-invalid');
+          slot.classList.add('drag-over');
+        } else {
+          slot.classList.remove('drag-over');
+          slot.classList.add('drag-invalid');
+        }
+      }
+    } catch (error) {
+      // If we can't parse the data, show invalid state
+      slot.classList.remove('drag-over');
+      slot.classList.add('drag-invalid');
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    const slot = e.currentTarget;
+    slot.classList.remove('drag-over', 'drag-invalid');
+  };
+
+  const handleDrop = (e, slotIndex) => {
+    e.preventDefault();
+    const slot = e.currentTarget;
+    slot.classList.remove('drag-over', 'drag-invalid');
+    
+    try {
+      const dragData = e.dataTransfer.getData('application/json');
+      if (dragData) {
+        const topic = JSON.parse(dragData);
+        const totalSessions = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
+        
+        // Check if drop is valid
+        if (slotIndex >= totalSessions && topic.sessions <= (sessionPack.sessions - totalSessions)) {
+          // Add topic with animation effect
+          setCoursePlan([...coursePlan, topic]);
+          
+          // Add visual feedback
+          slot.classList.add('slot-receiving');
+          setTimeout(() => {
+            slot.classList.remove('slot-receiving');
+          }, 600);
+        } else {
+          // Invalid drop - show error feedback
+          slot.classList.add('drag-invalid');
+          setTimeout(() => {
+            slot.classList.remove('drag-invalid');
+          }, 500);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling drop:', error);
+    }
+  };
+
   const totalSessionsUsed = coursePlan.reduce((acc,t)=>acc+t.sessions,0);
   const totalPrice = (sessionPack.sessions * 50) * (1 - sessionPack.discount);
 
@@ -213,7 +294,14 @@ function App() {
 
         <h2 style={{marginTop:'20px'}}>Topic Library</h2>
         {filteredTopics.map(t => (
-          <div key={t.id} className="topic-row" style={{padding:'8px', border:'1px solid #ccc', margin:'6px 0', borderRadius:'6px'}}>
+          <div 
+            key={t.id} 
+            className="topic-row" 
+            style={{padding:'8px', border:'1px solid #ccc', margin:'6px 0', borderRadius:'6px'}}
+            draggable="true"
+            onDragStart={(e) => handleDragStart(e, t)}
+            onDragEnd={handleDragEnd}
+          >
             <div>
               <strong>{t.name}</strong> ({t.type}, {t.duration} min, {t.sessions} session{t.sessions>1?'s':''})
               <button className="add-remove" style={{marginLeft:'10px'}} onClick={(e)=>addTopic(t, e)}>Add</button>
@@ -264,6 +352,9 @@ function App() {
                   key={slotIndex} 
                   className="session-slot" 
                   data-slot-index={slotIndex}
+                  onDragOver={(e) => handleDragOver(e, slotIndex)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, slotIndex)}
                   style={{
                     padding: '12px',
                     border: '2px dashed #ccc',

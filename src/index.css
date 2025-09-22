@@ -147,3 +147,33 @@ button.info:hover {
   transform: scale(0.95);
   opacity: 0.7;
 }
+
+/* Drag and drop styles */
+.topic-row.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  cursor: grabbing;
+}
+
+.topic-row {
+  cursor: grab;
+}
+
+.topic-row:active {
+  cursor: grabbing;
+}
+
+.session-slot.drag-over {
+  transform: scale(1.05);
+  background-color: #e3f2fd !important;
+  border-color: #2196f3 !important;
+  border-style: solid !important;
+  box-shadow: 0 0 20px rgba(33, 150, 243, 0.5);
+}
+
+.session-slot.drag-invalid {
+  transform: scale(0.95);
+  background-color: #ffebee !important;
+  border-color: #f44336 !important;
+  box-shadow: 0 0 15px rgba(244, 67, 54, 0.4);
+}
